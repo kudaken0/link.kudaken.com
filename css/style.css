@@ -26,7 +26,13 @@ body {
 }
 .geometric-background {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  /* Keep the canvas stable as mobile browser controls hide during scrolling. */
+  height: 100lvh;
+  transform: translateZ(0);
   z-index: -1;
   overflow: hidden;
   pointer-events: none;

@@ -12,25 +12,38 @@ if (particleContext) {
   let frameId = null;
   let previousTime = null;
   let elapsed = 0;
+  let pixelRatio = 0;
 
   function resizeParticles() {
     const bounds = particleCanvas.getBoundingClientRect();
+    const scale = Math.min(window.devicePixelRatio || 1, 2);
+    if (width === bounds.width && height === bounds.height && pixelRatio === scale) return;
+    const previousWidth = width;
+    const previousHeight = height;
     width = bounds.width;
     height = bounds.height;
-    const scale = Math.min(window.devicePixelRatio || 1, 2);
+    pixelRatio = scale;
     particleCanvas.width = Math.round(width * scale);
     particleCanvas.height = Math.round(height * scale);
     particleContext.setTransform(scale, 0, 0, scale, 0, 0);
     const count = Math.min(100, Math.max(26, Math.round(width * height / 18000)));
-    particles = Array.from({ length: count }, () => {
+    // Preserve the existing network instead of regenerating it on resize.
+    if (previousWidth && previousHeight) {
+      for (const particle of particles) {
+        particle.x *= width / previousWidth;
+        particle.y *= height / previousHeight;
+      }
+    }
+    particles = particles.slice(0, count);
+    while (particles.length < count) {
       const angle = Math.random() * Math.PI * 2;
       const speed = 14 + Math.random() * 18;
-      return {
+      particles.push({
         x: Math.random() * width, y: Math.random() * height,
         vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
         size: 1 + Math.random() * 1.6, phase: Math.random() * Math.PI * 2
-      };
-    });
+      });
+    }
     drawParticles(0);
   }
 
