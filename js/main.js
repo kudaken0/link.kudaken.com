@@ -1,6 +1,47 @@
 const year = document.getElementById('y');
 if (year) year.textContent = new Date().getFullYear();
 
+// Reveal each element once, without hiding content when JavaScript is unavailable.
+const entranceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+if (!entranceMotion.matches && 'IntersectionObserver' in window && 'animate' in Element.prototype) {
+  const entranceAnimations = new Set();
+  const entranceObserver = new IntersectionObserver((entries) => {
+    let stagger = 0;
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      entranceObserver.unobserve(entry.target);
+      if (entranceMotion.matches || entry.target.contains(document.activeElement)) continue;
+      const animation = entry.target.animate(
+        [{ opacity: 0, translate: '0 16px' }, { opacity: 1, translate: '0 0' }],
+        {
+          duration: 600,
+          delay: Math.min(stagger++ * 70, 280),
+          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+          fill: 'backwards'
+        }
+      );
+      entranceAnimations.add(animation);
+      animation.addEventListener('finish', () => entranceAnimations.delete(animation), { once: true });
+    }
+  }, { threshold: 0.08 });
+
+  document.querySelectorAll('.profile, #links-title, .link-card, .links-end, footer')
+    .forEach((element) => entranceObserver.observe(element));
+
+  // Keep focused controls visible immediately, including during a stagger delay.
+  document.addEventListener('focusin', (event) => {
+    for (const animation of entranceAnimations) {
+      if (animation.effect.target.contains(event.target)) animation.finish();
+    }
+  });
+  entranceMotion.addEventListener('change', () => {
+    if (!entranceMotion.matches) return;
+    entranceObserver.disconnect();
+    for (const animation of entranceAnimations) animation.cancel();
+    entranceAnimations.clear();
+  });
+}
+
 // Nearby moving particles form a constantly changing geometric network.
 const particleCanvas = document.getElementById('particleCanvas');
 const particleContext = particleCanvas?.getContext('2d');
